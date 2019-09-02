@@ -6,7 +6,7 @@ export default {
   UserName: {
     props: {
       size: 'large',
-      id: 'userName',
+      id: 'userN',
       prefix: <Icon type="user" className={styles.prefixIcon} />,
       placeholder: 'admin',
     },

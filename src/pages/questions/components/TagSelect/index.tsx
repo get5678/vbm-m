@@ -138,7 +138,7 @@ class TagSelect extends Component<TagSelectProps, TagSelectState> {
       [styles.hasExpandTag]: expandable,
       [styles.expanded]: expand,
     });
-
+    
     return (
       <div className={cls} style={style}>
         {hideCheckAll ? null : (

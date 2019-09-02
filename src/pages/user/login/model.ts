@@ -1,8 +1,11 @@
 import { AnyAction, Reducer } from 'redux';
 import { EffectsCommandMap } from 'dva';
 import { routerRedux } from 'dva/router';
+import { reloadAuthorized } from '@/utils/Authorized'
 import { fakeAccountLogin, getFakeCaptcha } from './service';
+import { adminLogin, userLogin } from '../../../services/api';
 import { getPageQuery, setAuthority } from './utils/utils';
+import { message } from 'antd';
 
 export interface StateType {
   status?: 'ok' | 'error';
@@ -21,6 +24,8 @@ export interface ModelType {
   effects: {
     login: Effect;
     getCaptcha: Effect;
+    adminLogin: Effect;
+    userLogin: Effect;
   };
   reducers: {
     changeLoginStatus: Reducer<StateType>;
@@ -62,6 +67,44 @@ const Model: ModelType = {
       }
     },
 
+    *userLogin({ payload: { successCallback, ...payload } }, { call, put }) {
+      const response = yield call(userLogin, payload);
+      if(response && response.code === 0) {
+        message.success('登录成功')
+        localStorage.setItem('token', response.data.token)
+        localStorage.setItem('name', response.data.userName)
+        localStorage.setItem('id', response.data.userId)
+        successCallback()
+      } else {
+        message.error(response.message)
+      }
+      yield put({
+        type: 'changeLoginStatus',
+        payload: {
+          currentAuthority: 'user'
+        }
+      })
+      reloadAuthorized()
+    },
+    *adminLogin({ payload: { successCallback, ...payload } }, { call, put }) {
+      const response = yield call(adminLogin, payload);
+      if(response && Number(response.code) === 0) {
+        message.success('登录成功')
+        localStorage.setItem('token', response.data.token)
+        localStorage.setItem('name', response.data.adminName)
+        localStorage.setItem('id', response.data.adminId)
+        successCallback()
+      } else {
+        message.error(response.message)
+      }
+      yield put({
+        type: 'changeLoginStatus',
+        payload: {
+          currentAuthority: 'admin'
+        }
+      })
+      reloadAuthorized()
+    },
     *getCaptcha({ payload }, { call }) {
       yield call(getFakeCaptcha, payload);
     },

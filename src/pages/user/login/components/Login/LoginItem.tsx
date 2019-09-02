@@ -63,6 +63,7 @@ class WrapFormItem extends Component<LoginItemProps, LoginItemState> {
     const { updateActive, name = '' } = this.props;
     if (updateActive) {
       updateActive(name);
+      // console.log('name', updateActive, name)
     }
   }
 
@@ -115,7 +116,7 @@ class WrapFormItem extends Component<LoginItemProps, LoginItemState> {
 
   render() {
     const { count } = this.state;
-
+    // console.log('login item props', this.props)
     // 这么写是为了防止restProps中 带入 onChange, defaultValue, rules props tabUtil
     const {
       onChange,
@@ -131,6 +132,7 @@ class WrapFormItem extends Component<LoginItemProps, LoginItemState> {
       tabUtil,
       ...restProps
     } = this.props;
+    // console.log('props', this.props)
     if (!name) {
       return null;
     }
@@ -141,10 +143,10 @@ class WrapFormItem extends Component<LoginItemProps, LoginItemState> {
     // get getFieldDecorator props
     const options = this.getFormItemOptions(this.props);
     const otherProps = restProps || {};
-
+    // console.log('name, option', name, options)
     if (type === 'Captcha') {
       const inputProps = omit(otherProps, ['onGetCaptcha', 'countDown']);
-
+      // console.log('input props', customProps, inputProps)
       return (
         <FormItem>
           <Row gutter={8}>
@@ -165,6 +167,7 @@ class WrapFormItem extends Component<LoginItemProps, LoginItemState> {
         </FormItem>
       );
     }
+    // console.log('input props', name, options)
     return (
       <FormItem>
         {getFieldDecorator(name, options)(<Input {...customProps} {...otherProps} />)}
@@ -176,8 +179,12 @@ class WrapFormItem extends Component<LoginItemProps, LoginItemState> {
 const LoginItem: Partial<LoginItemType> = {};
 
 Object.keys(ItemMap).forEach(key => {
+  // console.log('key', key)
   const item = ItemMap[key];
+  // console.log('item', item, key)
+  // console.log(LoginItem)
   LoginItem[key] = (props: LoginItemProps) => (
+   // console.log('item', props)
     <LoginContext.Consumer>
       {context => (
         <WrapFormItem

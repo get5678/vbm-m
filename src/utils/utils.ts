@@ -19,4 +19,6 @@ const isAntDesignProOrDev = (): boolean => {
   return isAntDesignPro();
 };
 
-export { isAntDesignProOrDev, isAntDesignPro, isUrl };
+const baseUrl = 'sensuos.top:8085'
+
+export { isAntDesignProOrDev, isAntDesignPro, isUrl, baseUrl };

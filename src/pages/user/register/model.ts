@@ -2,6 +2,8 @@ import { AnyAction, Reducer } from 'redux';
 
 import { EffectsCommandMap } from 'dva';
 import { fakeRegister } from './service';
+import { adminRegister, userRegister } from '@/services/api'
+import { message } from 'antd';
 
 export interface StateType {
   status?: 'ok' | 'error';
@@ -18,6 +20,8 @@ export interface ModelType {
   state: StateType;
   effects: {
     submit: Effect;
+    userRegiste: Effect;
+    adminRegist: Effect;
   };
   reducers: {
     registerHandle: Reducer<StateType>;
@@ -39,6 +43,38 @@ const Model: ModelType = {
         payload: response,
       });
     },
+    *userRegiste({ payload }, { call, put }) {
+      const response = yield call(userRegister, payload);
+      let stauts = '';
+      if(response && response.code === 0) {
+        stauts = 'ok'
+      }else {
+        message.error(response.message)
+        stauts = 'error'
+      }
+      yield put({
+        type: 'registerHandle',
+        payload: {
+          status: stauts
+        }
+      })
+    },
+    *adminRegist({ payload }, { call, put }) {
+      const response = yield call(adminRegister, payload);
+      let stauts = ''
+      if(response && response.code === 0) {
+        stauts = 'ok'
+      } else {
+        message.error(response.message);
+        stauts = 'error'
+      }
+      yield put({
+        type: 'registerHandle',
+        payload: {
+          status: stauts
+        }
+      })
+    }
   },
 
   reducers: {

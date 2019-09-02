@@ -8,5 +8,6 @@ export default {
   'menu.dashboard': 'Dashboard',
   'menu.students': '学员列表',
   'menu.questions': '问题列表',
-  'menu.interview': '面试记录'
+  'menu.interview': '面试记录',
+  'menu.interviewedits': '面试记录编辑'
 };

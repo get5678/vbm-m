@@ -1,14 +1,10 @@
 import {
-  Badge,
   Button,
   Card,
   Col,
   Divider,
-  Dropdown,
   Form,
-  Icon,
   Input,
-  Menu,
   Row,
   message,
   Popconfirm,
@@ -23,9 +19,8 @@ import { SorterResult } from 'antd/es/table';
 import { connect } from 'dva';
 import moment from 'moment';
 import { StateType } from './model';
-import CreateForm from './components/CreateForm';
 import StandardTable, { StandardTableColumnProps } from './components/StandardTable';
-import UpdateForm, { FormValsType } from './components/UpdateForm';
+import { FormValsType } from './components/UpdateForm';
 import { TableListItem, TableListPagination, TableListParams } from './data.d';
 
 import styles from './style.less';
@@ -36,9 +31,6 @@ const getValue = (obj: { [x: string]: string[] }) =>
     .map(key => obj[key])
     .join(',');
 
-type IStatusMapType = 'default' | 'processing' | 'success' | 'error';
-const statusMap = ['default', 'processing', 'success', 'error'];
-const status = ['关闭', '运行中', '已上线', '异常'];
 
 interface TableListProps extends FormComponentProps {
   dispatch: Dispatch<any>;
@@ -55,9 +47,6 @@ interface TableListState {
   stepFormValues: Partial<TableListItem>;
 }
 
-const seniors = [
-  '滕鹏飞', '赵朋承', '潘洪杭'
-]
 
 /* eslint react/no-multi-comp:0 */
 @connect(
@@ -89,61 +78,36 @@ class TableList extends Component<TableListProps, TableListState> {
   columns: StandardTableColumnProps[] = [
     {
       title: '学员姓名',
-      dataIndex: 'user_name',
+      dataIndex: 'userName',
     },
     {
       title: '学员性别',
-      dataIndex: 'user_sex',
+      dataIndex: 'userSex',
       align: 'center',
       render: val => val === 0 ? '男' : '女'
     },
     {
       title: '学员组长',
       dataIndex: 'user_admin_id',
-      render: val => seniors[val]
+      render: val => val ? val : '无'
     },
     {
       title: '学员账号',
-      dataIndex: 'user_phone'
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      filters: [
-        {
-          text: status[0],
-          value: '0',
-        },
-        {
-          text: status[1],
-          value: '1',
-        },
-        {
-          text: status[2],
-          value: '2',
-        },
-        {
-          text: status[3],
-          value: '3',
-        },
-      ],
-      render(val: IStatusMapType) {
-        return <Badge status={statusMap[val]} text={status[val]} />;
-      },
+      dataIndex: 'userPhone'
     },
     {
       title: '上次调度时间',
-      dataIndex: 'updatedAt',
-      sorter: true,
-      render: (val: string) => <span>{moment(val).format('YYYY-MM-DD HH:mm:ss')}</span>,
+      dataIndex: 'userCreateTime',
+      render: (val: string) => <span>{moment(val).format('YYYY-MM-DD HH:mm')}</span>,
     },
     {
       title: '操作',
       render: (record) => (
         <Fragment>
-          <a onClick={() => this.handleToInterview(record)}>查看面试记录</a>
+          
+          <a onClick={() => this.handleToAddInterview(record)}>添加面试记录</a>
           <Divider type="vertical" />
-          <Popconfirm title="确定删除？" onConfirm={() => this.handleDeleteItem(record)}>
+          <Popconfirm title="确定删除？" onConfirm={() => this.handleDeleteItem(record.userId)}>
             <a className={styles.deleteButton}>删除</a>
           </Popconfirm>
         </Fragment>
@@ -163,6 +127,7 @@ class TableList extends Component<TableListProps, TableListState> {
     filtersArg: Record<keyof TableListItem, string[]>,
     sorter: SorterResult<TableListItem>,
   ) => {
+    
     const { dispatch } = this.props;
     const { formValues } = this.state;
 
@@ -181,10 +146,12 @@ class TableList extends Component<TableListProps, TableListState> {
     if (sorter.field) {
       params.sorter = `${sorter.field}_${sorter.order}`;
     }
-
     dispatch({
-      type: 'students/fetch',
-      payload: params,
+      type: 'students/getStudentList',
+      payload: {
+        current: pagination.current,
+        pageSize: pagination.pageSize
+      },
     });
   };
 
@@ -211,7 +178,7 @@ class TableList extends Component<TableListProps, TableListState> {
         dispatch({
           type: 'students/remove',
           payload: {
-            key: selectedRows.map(row => row.user_id),
+            key: selectedRows.map(row => row.userId),
           },
           callback: () => {
             this.setState({
@@ -233,25 +200,15 @@ class TableList extends Component<TableListProps, TableListState> {
 
   handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-
     const { dispatch, form } = this.props;
-
     form.validateFields((err, fieldsValue) => {
       if (err) return;
-
-      const values = {
-        ...fieldsValue,
-        updatedAt: fieldsValue.updatedAt && fieldsValue.updatedAt.valueOf(),
-      };
-
-      this.setState({
-        formValues: values,
-      });
-
-      dispatch({
-        type: 'students/fetch',
-        payload: values,
-      });
+      if (fieldsValue.name) {
+        dispatch({
+        type: 'students/getStudentSearch',
+          payload: fieldsValue,
+       });
+      }
     });
   };
 
@@ -281,20 +238,38 @@ class TableList extends Component<TableListProps, TableListState> {
     this.handleModalVisible();
   };
 
-  handleUpdate = (fields: FormValsType) => {
-    console.log('配置成功', fields)
-  };
   /**
    * @description 删除
    * @memberof TableList
    */
-  handleDeleteItem = (item: TableListItem) => {
-    console.log('单个删除', item)
+  handleDeleteItem = (item: string) => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'students/getStudentDelete',
+      payload: {
+        userId: Number(item),
+        successCallback() {
+          message.success('删除成功'),
+          dispatch({
+            type: 'students/getStudentList'
+          })
+        }
+      }
+    })
   }
   handleToInterview = (val: any) => {
     router.push({
       pathname: './interview',
       query: val
+    })
+  }
+  handleToAddInterview = (val: any) => {
+    router.push({
+      pathname: '/interviewedits',
+      query: {
+        userId: val.userId,
+        userName: val.userName
+      }
     })
   }
 
@@ -327,64 +302,27 @@ class TableList extends Component<TableListProps, TableListState> {
 
   render() {
     const {
-      students: { studentList: { data } },
+      students: { studentList },
       loading,
     } = this.props;
-    console.log('reder', this.props)
-    const { selectedRows, modalVisible, updateModalVisible, stepFormValues } = this.state;
-    const menu = (
-      <Menu onClick={this.handleMenuClick} selectedKeys={[]}>
-        <Menu.Item key="remove">删除</Menu.Item>
-        <Menu.Item key="approval">批量审批</Menu.Item>
-      </Menu>
-    );
+    
+    const { selectedRows } = this.state;
 
-    const parentMethods = {
-      handleAdd: this.handleAdd,
-      handleModalVisible: this.handleModalVisible,
-    };
-    const updateMethods = {
-      handleUpdateModalVisible: this.handleUpdateModalVisible,
-      handleUpdate: this.handleUpdate,
-    };
     return (
       <PageHeaderWrapper>
         <Card bordered={false}>
           <div className={styles.tableList}>
             <div className={styles.tableListForm}>{this.renderSimpleForm()}</div>
-            <div className={styles.tableListOperator}>
-              <Button icon="plus" type="primary" onClick={() => this.handleModalVisible(true)}>
-                新建
-              </Button>
-              {selectedRows.length > 0 && (
-                <span>
-                  <Button>批量操作</Button>
-                  <Dropdown overlay={menu}>
-                    <Button>
-                      更多操作 <Icon type="down" />
-                    </Button>
-                  </Dropdown>
-                </span>
-              )}
-            </div>
             <StandardTable
               selectedRows={selectedRows}
               loading={loading}
-              data={data}
+              data={studentList}
               columns={this.columns}
               onSelectRow={this.handleSelectRows}
               onChange={this.handleStandardTableChange}
             />
           </div>
         </Card>
-        <CreateForm {...parentMethods} modalVisible={modalVisible} />
-        {stepFormValues && Object.keys(stepFormValues).length ? (
-          <UpdateForm
-            {...updateMethods}
-            updateModalVisible={updateModalVisible}
-            values={stepFormValues}
-          />
-        ) : null}
       </PageHeaderWrapper>
     );
   }

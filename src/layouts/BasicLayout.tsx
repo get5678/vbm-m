@@ -38,6 +38,7 @@ export type BasicLayoutContext = { [K in 'location']: BasicLayoutProps[K] } & {
  */
 const menuDataRender = (menuList: MenuDataItem[]): MenuDataItem[] =>
   menuList.map(item => {
+    console.log('item', item)
     const localItem = {
       ...item,
       children: item.children ? menuDataRender(item.children) : [],

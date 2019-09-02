@@ -1,17 +1,17 @@
-import { Alert, Checkbox, Icon } from 'antd';
+import { Alert, Checkbox } from 'antd';
 import { FormattedMessage, formatMessage } from 'umi-plugin-react/locale';
 import React, { Component } from 'react';
 
 import { CheckboxChangeEvent } from 'antd/es/checkbox';
 import { Dispatch } from 'redux';
 import { FormComponentProps } from 'antd/es/form';
-import Link from 'umi/link';
 import { connect } from 'dva';
 import { StateType } from './model';
 import LoginComponents from './components/Login';
 import styles from './style.less';
+import { Link, router } from 'umi';
 
-const { Tab, UserName, Password, Mobile, Captcha, Submit } = LoginComponents;
+const { Tab, UserName, Password, Submit } = LoginComponents;
 
 interface LoginProps {
   dispatch: Dispatch<any>;
@@ -52,7 +52,7 @@ class Login extends Component<
   loginForm: FormComponentProps['form'] | undefined | null = undefined;
 
   state: LoginState = {
-    type: 'account',
+    type: 'admin',
     autoLogin: true,
   };
 
@@ -64,15 +64,29 @@ class Login extends Component<
 
   handleSubmit = (err: any, values: FormDataType) => {
     const { type } = this.state;
+    const { dispatch } = this.props;
     if (!err) {
-      const { dispatch } = this.props;
-      dispatch({
-        type: 'userLogin/login',
-        payload: {
-          ...values,
-          type,
-        },
-      });
+      if( type === 'admin' ) {
+        dispatch({
+          type: 'userLogin/adminLogin',
+          payload: {
+            ...values,
+            successCallback() {
+              router.replace('/interview')
+            }
+          },
+        });
+      } else if(type === 'user'){
+        dispatch({
+          type:'userLogin/userLogin',
+          payload: {
+            ...values,
+            successCallback() {
+              router.replace('/interview')
+            }
+          }
+        })
+      }
     }
   };
 
@@ -118,16 +132,16 @@ class Login extends Component<
             this.loginForm = form;
           }}
         >
-          <Tab key="account" tab={formatMessage({ id: 'user-login.login.tab-login-credentials' })}>
+          <Tab key="admin" tab={formatMessage({ id: 'user-login.login.tab-login-admin' })}>
             {status === 'error' &&
-              loginType === 'account' &&
+              loginType === 'admin' &&
               !submitting &&
               this.renderMessage(
-                formatMessage({ id: 'user-login.login.message-invalid-credentials' }),
+                formatMessage({ id: 'user-login.login.message-invalid-admin' }),
               )}
             <UserName
-              name="userName"
-              placeholder={`${formatMessage({ id: 'user-login.login.userName' })}: admin or user`}
+              name="phone"
+              placeholder={`${formatMessage({ id: 'user-login.login.userName' })}: admin`}
               rules={[
                 {
                   required: true,
@@ -137,7 +151,7 @@ class Login extends Component<
             />
             <Password
               name="password"
-              placeholder={`${formatMessage({ id: 'user-login.login.password' })}: ant.design`}
+              placeholder={`${formatMessage({ id: 'user-login.login.password' })}: 数字加字母组合`}
               rules={[
                 {
                   required: true,
@@ -150,40 +164,36 @@ class Login extends Component<
               }}
             />
           </Tab>
-          <Tab key="mobile" tab={formatMessage({ id: 'user-login.login.tab-login-mobile' })}>
+          <Tab key="user" tab={formatMessage({ id: 'user-login.login.tab-login-user' })}>
             {status === 'error' &&
               loginType === 'mobile' &&
               !submitting &&
               this.renderMessage(
                 formatMessage({ id: 'user-login.login.message-invalid-verification-code' }),
               )}
-            <Mobile
-              name="mobile"
-              placeholder={formatMessage({ id: 'user-login.phone-number.placeholder' })}
+            <UserName
+              name="phone"
+              placeholder={`${formatMessage({ id: 'user-login.login.userName' })}: user`}
               rules={[
                 {
                   required: true,
-                  message: formatMessage({ id: 'user-login.phone-number.required' }),
-                },
-                {
-                  pattern: /^1\d{10}$/,
-                  message: formatMessage({ id: 'user-login.phone-number.wrong-format' }),
+                  message: formatMessage({ id: 'user-login.userName.required' }),
                 },
               ]}
             />
-            <Captcha
-              name="captcha"
-              placeholder={formatMessage({ id: 'user-login.verification-code.placeholder' })}
-              countDown={120}
-              onGetCaptcha={this.onGetCaptcha}
-              getCaptchaButtonText={formatMessage({ id: 'user-login.form.get-captcha' })}
-              getCaptchaSecondText={formatMessage({ id: 'user-login.captcha.second' })}
+            <Password
+              name="password"
+              placeholder={`${formatMessage({ id: 'user-login.login.password' })}: 数字加字母组合`}
               rules={[
                 {
                   required: true,
-                  message: formatMessage({ id: 'user-login.verification-code.required' }),
+                  message: formatMessage({ id: 'user-login.password.required' }),
                 },
               ]}
+              onPressEnter={e => {
+                e.preventDefault();
+                this.loginForm.validateFields(this.handleSubmit);
+              }}
             />
           </Tab>
           <div>
@@ -198,12 +208,8 @@ class Login extends Component<
             <FormattedMessage id="user-login.login.login" />
           </Submit>
           <div className={styles.other}>
-            <FormattedMessage id="user-login.login.sign-in-with" />
-            <Icon type="alipay-circle" className={styles.icon} theme="outlined" />
-            <Icon type="taobao-circle" className={styles.icon} theme="outlined" />
-            <Icon type="weibo-circle" className={styles.icon} theme="outlined" />
-            <Link className={styles.register} to="/user/register">
-              <FormattedMessage id="user-login.login.signup" />
+            <Link className={styles.register} to={`/user/register?type=${type}`}>
+              <FormattedMessage id={`user-login.login.signup.${type}`} />
             </Link>
           </div>
         </LoginComponents>

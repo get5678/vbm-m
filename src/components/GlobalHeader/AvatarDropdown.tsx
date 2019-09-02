@@ -1,6 +1,5 @@
 import { Avatar, Icon, Menu, Spin } from 'antd';
 import { ClickParam } from 'antd/es/menu';
-import { FormattedMessage } from 'umi-plugin-react/locale';
 import React from 'react';
 import { connect } from 'dva';
 import router from 'umi/router';
@@ -26,7 +25,6 @@ class AvatarDropdown extends React.Component<GlobalHeaderRightProps> {
           type: 'login/logout',
         });
       }
-
       return;
     }
     router.push(`/account/${key}`);
@@ -34,6 +32,12 @@ class AvatarDropdown extends React.Component<GlobalHeaderRightProps> {
 
   render(): React.ReactNode {
     const { currentUser = {}, menu } = this.props;
+    let identify = '';
+    if(currentUser.identify === '["admin"]') {
+      identify = '管理员'
+    }else if(currentUser.identify === '["user"]') {
+      identify = '学员'
+    }
     if (!menu) {
       return (
         <span className={`${styles.action} ${styles.account}`}>
@@ -46,16 +50,12 @@ class AvatarDropdown extends React.Component<GlobalHeaderRightProps> {
       <Menu className={styles.menu} selectedKeys={[]} onClick={this.onMenuClick}>
         <Menu.Item key="center">
           <Icon type="user" />
-          <FormattedMessage id="menu.account.center" defaultMessage="account center" />
-        </Menu.Item>
-        <Menu.Item key="settings">
-          <Icon type="setting" />
-          <FormattedMessage id="menu.account.settings" defaultMessage="account settings" />
+          {identify}
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item key="logout">
           <Icon type="logout" />
-          <FormattedMessage id="menu.account.logout" defaultMessage="logout" />
+          退出登录
         </Menu.Item>
       </Menu>
     );

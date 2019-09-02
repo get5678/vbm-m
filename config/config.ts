@@ -104,22 +104,31 @@ export default {
       Routes: ['src/pages/Authorized'],
       authority: ['admin', 'user'],
       routes: [
+        { path: '/', redirect: 'user/login' },
         {
           name: 'students',
           icon: 'menu',
           path: '/students',
-          component: './students'
+          component: './students',
+          authority: ['admin'],
+        },
+        {
+          name: 'interviewedits',
+          path: '/interviewedits',
+          component: './interviewEdits',
+          hideInMenu: true,
+          authority: ['admin'],
         },
         {
           name: 'interview',
+          icon: 'menu',
           path: '/interview',
           component: './interview',
-          hideInMenu: true
         },
         {
           name: 'questions',
           icon: 'question',
-          path: '/questions',
+          path: '/question',
           component: './questions',
         },
         {
@@ -179,13 +188,13 @@ export default {
     basePath: '/',
   },
   chainWebpack: webpackPlugin,
-  /*
   proxy: {
-    '/server/api/': {
-      target: 'https://preview.pro.ant.design/',
+    '/vbm': {
+      target: 'http://sensuos.top:8085/',
       changeOrigin: true,
-      pathRewrite: { '^/server': '' },
+      pathRewrite: {
+        '^/vbm': '',
+      },
     },
   },
-  */
 } as IConfig;

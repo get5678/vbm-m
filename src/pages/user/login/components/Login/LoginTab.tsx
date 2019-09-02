@@ -34,6 +34,7 @@ class LoginTab extends Component<LoginTabProps> {
   }
 
   render() {
+    // console.log('props tab',this.props)
     const { children } = this.props;
     return <TabPane {...this.props}>{children}</TabPane>;
   }

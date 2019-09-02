@@ -2,14 +2,14 @@ import { Alert, Table } from 'antd';
 import { ColumnProps, TableRowSelection, TableProps } from 'antd/es/table';
 import React, { Component, Fragment } from 'react';
 
-import { TableListItem } from '../../data.d';
+import { TableListItem, StudentListData } from '../../data.d';
 import styles from './index.less';
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
 export interface StandardTableProps<T> extends Omit<TableProps<T>, 'columns'> {
   columns: StandardTableColumnProps[];
-  data: TableListItem[];
+  data: StudentListData;
   selectedRows: TableListItem[];
   onSelectRow: (rows: any) => void;
 }
@@ -100,11 +100,14 @@ class StandardTable extends Component<StandardTableProps<TableListItem>, Standar
   render() {
     const { selectedRowKeys, needTotalList } = this.state;
     const { data, ...rest } = this.props;
-    // const { list = [], pagination = false } = data || {};
-    const pagination = false;
-    console.log('standardtable', this.props)
+    const { list = [], current = 0, pageSize = 5, total = 0 } = data || {};
+    const pagination = true;
+    
     const paginationProps = pagination
       ? {
+          current,
+          pageSize,
+          total, 
           showSizeChanger: true,
           showQuickJumper: true,
         }
@@ -146,9 +149,9 @@ class StandardTable extends Component<StandardTableProps<TableListItem>, Standar
           />
         </div>
         <Table
-          rowKey='user_id'
+          rowKey='userId'
           rowSelection={rowSelection}
-          dataSource={data}
+          dataSource={list}
           pagination={paginationProps}
           onChange={this.handleTableChange}
           {...rest}

@@ -1,7 +1,8 @@
 import { AnyAction, Reducer } from 'redux';
 import { EffectsCommandMap } from 'dva';
-import { addRule, queryRule, removeRule, updateRule, getStudentList } from './service';
-
+import { updateRule,  } from './service';
+import { userGetList, userGetSearch, userDelete } from '@/services/api'
+import { message } from 'antd';
 export interface StateType {
   studentList?: any
 }
@@ -15,11 +16,10 @@ export interface ModelType {
   namespace: string;
   state: StateType;
   effects: {
-    fetch: Effect;
-    add: Effect;
-    remove: Effect;
     update: Effect;
     getStudentList: Effect;
+    getStudentSearch: Effect;
+    getStudentDelete: Effect;
   };
   reducers: {
     save: Reducer<StateType>;
@@ -35,38 +35,42 @@ const Model: ModelType = {
 
   effects: {
     *getStudentList({payload}, { call, put }) {
-      const response = yield call(getStudentList, payload);
+      const response = yield call(userGetList, payload);
+      if(response.code !== 0) {
+        message.error(response.message)
+      }
       yield put({
         type: 'save',
         payload: {
           attr: 'studentList',
-          data: response
+          data: response.data
         }
       })
     },
-    *fetch({ payload }, { call, put }) {
-      const response = yield call(queryRule, payload);
+    *getStudentSearch({ payload }, { call, put }) {
+      const response = yield call(userGetSearch, payload);
       yield put({
         type: 'save',
-        payload: response,
-      });
+        payload: {
+          attr: 'studentList',
+          data: response.data
+        }
+      })
     },
-    *add({ payload, callback }, { call, put }) {
-      const response = yield call(addRule, payload);
+
+    *getStudentDelete({ payload: { successCallback, ...payload } }, { call, put }) {
+      const response = yield call(userDelete, payload);
+      if(response && response.code === 0) {
+        successCallback()
+      } else {
+        message.error(response.message)
+      }
       yield put({
         type: 'save',
-        payload: response,
-      });
-      if (callback) callback();
+        payload: response.data
+      })
     },
-    *remove({ payload, callback }, { call, put }) {
-      const response = yield call(removeRule, payload);
-      yield put({
-        type: 'save',
-        payload: response,
-      });
-      if (callback) callback();
-    },
+    
     *update({ payload, callback }, { call, put }) {
       const response = yield call(updateRule, payload);
       yield put({

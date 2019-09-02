@@ -1,11 +1,12 @@
 import { AnyAction, Reducer } from 'redux';
 
 import { EffectsCommandMap } from 'dva';
-import { ListItemDataType } from './data.d';
-import { queryFakeList } from './service';
+import { ListDataType } from './data.d';
+import { questionList, questionSearch, questionDelete, questionAdd } from '@/services/api'
+import { message } from 'antd';
 
 export interface StateType {
-  list: ListItemDataType[];
+  data: ListDataType
 }
 
 export type Effect = (
@@ -17,12 +18,13 @@ export interface ModelType {
   namespace: string;
   state: StateType;
   effects: {
-    fetch: Effect;
-    appendFetch: Effect;
+    getList: Effect;
+    search: Effect;
+    delete: Effect;
+    add: Effect;
   };
   reducers: {
     queryList: Reducer<StateType>;
-    appendList: Reducer<StateType>;
   };
 }
 
@@ -30,40 +32,78 @@ const Model: ModelType = {
   namespace: 'questions',
 
   state: {
-    list: [],
+    data: {
+      list: [],
+      pagination: {
+        current: 1,
+        pageSize: 5,
+        total: 0
+      }
+    }
   },
 
   effects: {
-    *fetch({ payload }, { call, put }) {
-      const response = yield call(queryFakeList, payload);
-      yield put({
-        type: 'queryList',
-        payload: Array.isArray(response) ? response : [],
-      });
+    *getList({payload}, {call, put}){
+      const response = yield call(questionList, payload);
+      if (response && response.code === 0) {
+        yield put({
+          type: 'queryList',
+          payload: {
+            list: response.data.list,
+            pagination: {
+              current: response.data.current,
+              total: response.data.total,
+              pageSize: response.data.pageSize
+            }
+          },
+        });
+      }
     },
-    *appendFetch({ payload }, { call, put }) {
-      const response = yield call(queryFakeList, payload);
-      yield put({
-        type: 'appendList',
-        payload: Array.isArray(response) ? response : [],
-      });
+    *search({payload},{call, put}){
+      const response = yield call(questionSearch, payload)
+      if(response && response.code === 0) {
+        yield put({
+          type: 'queryList',
+          payload: {
+            list: response.data.list,
+            pagination: {
+              current: response.data.current,
+              total: response.data.total,
+              pageSize: response.data.pageSize
+            }
+          },
+        })
+      } else {
+        message.error(response.message)
+      }
     },
+    *add({ payload, callback}, {call}) {
+      const response = yield call(questionAdd, payload)
+      if(response && response.code === 0) {
+        callback();
+      }else {
+        message.error(response.message)
+      }
+    },
+    *delete({payload, successCallback}, {call}) {
+      const response = yield call(questionDelete, payload);
+      if(response && response.code === 0) {
+        successCallback()
+      } else {
+        message.error(response.message)
+      }
+    }
+  
   },
 
   reducers: {
     queryList(state, action) {
       return {
         ...state,
-        list: action.payload,
+        data: action.payload,
       };
-    },
-    appendList(state, action) {
-      return {
-        ...state,
-        list: (state as StateType).list.concat(action.payload),
-      };
-    },
-  },
+    }
+  }
 };
 
 export default Model;

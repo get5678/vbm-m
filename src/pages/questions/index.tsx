@@ -1,20 +1,14 @@
-import { Button, Card, Col, Form, Icon, List, Row, Select, Tag } from 'antd';
+import { Card, Form, List, Tag, Skeleton, Radio, message, Button, Popconfirm } from 'antd';
 import React, { Component } from 'react';
 
 import { Dispatch } from 'redux';
 import { FormComponentProps } from 'antd/es/form';
 import { connect } from 'dva';
-import ArticleListContent from './components/ArticleListContent';
 import { StateType } from './model';
 import { ListItemDataType } from './data.d';
 import StandardFormRow from './components/StandardFormRow';
-import TagSelect from './components/TagSelect';
+import CreateForm, { addInfo } from './components/CreateForm'
 import styles from './style.less';
-
-const { Option } = Select;
-const FormItem = Form.Item;
-
-const pageSize = 5;
 
 interface QuestionsProps extends FormComponentProps {
   dispatch: Dispatch<any>;
@@ -22,171 +16,217 @@ interface QuestionsProps extends FormComponentProps {
   loading: boolean;
 }
 
+
 class Questions extends Component<QuestionsProps> {
+
+  state = {
+    paginations: {
+      total: 0,
+      current: 1,
+      pageSize: 1,
+      defaultCurrent: 1
+    },
+    type: 5,
+    showAdd: false,
+    loading: false,
+    imageUrl: '',
+    addButton: true,
+  }
+
   componentDidMount() {
     const { dispatch } = this.props;
+    const { paginations: {pageSize, current} } = this.state;
+    const identify = localStorage.getItem('antd-pro-authority') || '';
+    if (identify !== '["user"]') {
+      this.setState({
+        addButton: false
+      })
+    }
     dispatch({
-      type: 'questions/fetch',
+      type: 'questions/getList',
       payload: {
-        count: 5,
-      },
+        pageSize,
+        current,
+      }
     });
   }
 
-  setOwner = () => {
-    const { form } = this.props;
-    form.setFieldsValue({
-      owner: ['wzj'],
-    });
-  };
-
-  fetchMore = () => {
+  handleSearch = (e: any) => {
+    const type = e.target.value
     const { dispatch } = this.props;
+    this.setState({
+      type
+    })
+    if (type !== 5) {
+      dispatch({
+        type: 'questions/search',
+        payload: {
+          type
+        }
+      })
+    } else if(type === 5){
+      dispatch({
+        type: 'questions/getList',
+      })
+    }
+  }
+
+  handleChange = (page:number, pageSize:number | undefined) => {
+    const { paginations, type } = this.state;
+    const { dispatch } = this.props;
+    const pagination = Object.assign({}, paginations);
+    pagination.current = page;
+    pagination.defaultCurrent = page;
+    this.setState({
+      paginations: pagination
+    }, () => {
+      if(type === 5) {
+        dispatch({
+          type: 'questions/getList',
+          payload: {
+            current: this.state.paginations.current
+          }
+        })
+      }
+      else {
+        dispatch({
+          type: 'questions/search',
+          payload: {
+            type,
+            current: this.state.paginations.current
+          }
+        })
+      }
+      
+    })
+  }
+
+  handleDelete = (id: number | string) => {
+    const { dispatch } = this.props;
+    const { paginations: { pageSize, current } } = this.state;
     dispatch({
-      type: 'questions/appendFetch',
+      type: 'questions/delete',
       payload: {
-        count: pageSize,
+        id: Number(id)
       },
-    });
-  };
+      successCallback() {
+        message.success('删除成功');
+        dispatch({
+          type: 'questions/getList',
+          payload: {
+            current,
+            pageSize
+          }
+        })
+      }
+    })
+  }
+
+  handleModalVisible = () => {
+    const { showAdd } = this.state;
+    this.setState({
+      showAdd: !showAdd,
+      imageUrl: ''
+    })
+  }
+
+  getBase64 = (img:any, callback:any) => {
+  const reader = new FileReader();
+  reader.addEventListener('load', () => callback(reader.result));
+  reader.readAsDataURL(img);
+}
+
+  handleAdd = (fieldsValue: addInfo) => {
+    const { dispatch } = this.props;
+    const { paginations: { pageSize, current } } = this.state;
+    const data = new FormData();
+    
+    fieldsValue.userId = Number(localStorage.getItem('id') || undefined)
+    fieldsValue.file = fieldsValue.file.fileList[0].originFileObj;
+    
+    Object.keys(fieldsValue).forEach(key => {
+      data.append(key, fieldsValue[key])
+    })
+    dispatch({
+      type: 'questions/add',
+      payload: data,
+      callback() {
+        message.success('添加成功');
+        dispatch({
+          type: 'questions/getList',
+          payload: {
+            pageSize,
+            current
+          }
+        })
+      }
+    })
+  }
+
+  
+  beforeUpload = (file:any) => {
+    const isJpg = file.type === 'image/jpeg' || file.type === 'image/png';
+    if(!isJpg) {
+      message.error('只能上传jpg或者png')
+    }
+    const is2M = file.size / 1024 / 1024 < 2;
+    if(!is2M) {
+      message.error('不能超过2M')
+    }
+    return isJpg && is2M;
+  }
+
+  handleUpload = (info: any) => {
+    const { file } = info;
+    if (file.status === 'uploading') {
+      this.setState({
+        loading: true
+      })
+    }
+    if(file.status === 'done') {
+      this.getBase64(info.file.originFileObj, (imageUrl:string) =>
+        this.setState({
+          imageUrl,
+          loading: false,
+        })
+      );
+    }
+  }
+
 
   render() {
     const {
-      form,
-      questions: { list },
-      loading,
+      questions: { data:{list, pagination} }
     } = this.props;
-    const { getFieldDecorator } = form;
+    const { paginations, showAdd, loading, imageUrl, addButton } = this.state;
+    paginations.pageSize = pagination.pageSize;
+    paginations.total = pagination.total;
+    
+    const type = ['html', 'css', 'javascript', 'git', 'other']
+    const grade = ['A','B','C','D','E','F']
 
-    const owners = [
-      {
-        id: 'wzj',
-        name: '我自己',
-      },
-      {
-        id: 'wjh',
-        name: '吴家豪',
-      },
-      {
-        id: 'zxx',
-        name: '周星星',
-      },
-      {
-        id: 'zly',
-        name: '赵丽颖',
-      },
-      {
-        id: 'ym',
-        name: '姚明',
-      },
-    ];
-
-    const IconText: React.FC<{
-      type: string;
-      text: React.ReactNode;
-    }> = ({ type, text }) => (
-      <span>
-        <Icon type={type} style={{ marginRight: 8 }} />
-        {text}
-      </span>
-    );
-
-    const formItemLayout = {
-      wrapperCol: {
-        xs: { span: 24 },
-        sm: { span: 24 },
-        md: { span: 12 },
-      },
-    };
-
-    const loadMore =
-      list.length > 0 ? (
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <Button onClick={this.fetchMore} style={{ paddingLeft: 48, paddingRight: 48 }}>
-            {loading ? (
-              <span>
-                <Icon type="loading" /> 加载中...
-              </span>
-            ) : (
-              '加载更多'
-            )}
-          </Button>
-        </div>
-      ) : null;
-
+    const parentMethods = {
+      handleAdd: this.handleAdd,
+      handleModalVisible: this.handleModalVisible,
+      handleUpload: this.handleUpload,
+      beforeUpload: this.beforeUpload,
+    }
+    
     return (
       <>
         <Card bordered={false}>
-          <Form layout="inline">
-            <StandardFormRow title="所属类目" block style={{ paddingBottom: 11 }}>
-              <FormItem>
-                {getFieldDecorator('category')(
-                  <TagSelect expandable>
-                    <TagSelect.Option value="cat1">类目一</TagSelect.Option>
-                    <TagSelect.Option value="cat2">类目二</TagSelect.Option>
-                    <TagSelect.Option value="cat3">类目三</TagSelect.Option>
-                    <TagSelect.Option value="cat4">类目四</TagSelect.Option>
-                    <TagSelect.Option value="cat5">类目五</TagSelect.Option>
-                    <TagSelect.Option value="cat6">类目六</TagSelect.Option>
-                    <TagSelect.Option value="cat7">类目七</TagSelect.Option>
-                    <TagSelect.Option value="cat8">类目八</TagSelect.Option>
-                    <TagSelect.Option value="cat9">类目九</TagSelect.Option>
-                    <TagSelect.Option value="cat10">类目十</TagSelect.Option>
-                    <TagSelect.Option value="cat11">类目十一</TagSelect.Option>
-                    <TagSelect.Option value="cat12">类目十二</TagSelect.Option>
-                  </TagSelect>,
-                )}
-              </FormItem>
+            <StandardFormRow title="所属类型" block style={{ paddingBottom: 11 }}>
+                <Radio.Group onChange={this.handleSearch} defaultValue={5}>
+                  <Radio.Button value={5}>全部</Radio.Button>
+                  {type.map((item,index) => {
+                    return (
+                      <Radio.Button key={index} value={index}>{item}</Radio.Button>
+                    )
+                  })}
+                </Radio.Group>
             </StandardFormRow>
-            <StandardFormRow title="owner" grid>
-              <Row>
-                <Col>
-                  <FormItem {...formItemLayout}>
-                    {getFieldDecorator('owner', {
-                      initialValue: ['wjh', 'zxx'],
-                    })(
-                      <Select
-                        mode="multiple"
-                        style={{ maxWidth: 286, width: '100%' }}
-                        placeholder="选择 owner"
-                      >
-                        {owners.map(owner => (
-                          <Option key={owner.id} value={owner.id}>
-                            {owner.name}
-                          </Option>
-                        ))}
-                      </Select>,
-                    )}
-                    <a className={styles.selfTrigger} onClick={this.setOwner}>
-                      只看自己的
-                    </a>
-                  </FormItem>
-                </Col>
-              </Row>
-            </StandardFormRow>
-            <StandardFormRow title="其它选项" grid last>
-              <Row gutter={16}>
-                <Col xl={8} lg={10} md={12} sm={24} xs={24}>
-                  <FormItem {...formItemLayout} label="活跃用户">
-                    {getFieldDecorator('user', {})(
-                      <Select placeholder="不限" style={{ maxWidth: 200, width: '100%' }}>
-                        <Option value="lisa">李三</Option>
-                      </Select>,
-                    )}
-                  </FormItem>
-                </Col>
-                <Col xl={8} lg={10} md={12} sm={24} xs={24}>
-                  <FormItem {...formItemLayout} label="好评度">
-                    {getFieldDecorator('rate', {})(
-                      <Select placeholder="不限" style={{ maxWidth: 200, width: '100%' }}>
-                        <Option value="good">优秀</Option>
-                      </Select>,
-                    )}
-                  </FormItem>
-                </Col>
-              </Row>
-            </StandardFormRow>
-          </Form>
+          {addButton ? <Button type="primary" onClick={() => this.handleModalVisible()}>添加</Button> : null }
+          
         </Card>
         <Card
           style={{ marginTop: 24 }}
@@ -195,40 +235,51 @@ class Questions extends Component<QuestionsProps> {
         >
           <List<ListItemDataType>
             size="large"
-            loading={list.length === 0 ? loading : false}
+            loading={list.length < 0 }
             rowKey="id"
-            itemLayout="vertical"
-            loadMore={loadMore}
+            itemLayout="horizontal"
             dataSource={list}
+            pagination={{
+              onChange: (page, pageSize) => this.handleChange(page, pageSize),
+              ...paginations
+            }}
             renderItem={item => (
               <List.Item
-                key={item.id}
+                key={item.questionId}
                 actions={[
-                  <IconText key="star" type="star-o" text={item.star} />,
-                  <IconText key="like" type="like-o" text={item.like} />,
-                  <IconText type="message" key="message" text={item.message} />,
+                  <a >编辑</a>,
+                  <Popconfirm title='确认删除？' onConfirm={() => this.handleDelete(item.questionId)}>
+                    <a style={{color: 'red'}}>删除</a>
+                  </Popconfirm>
                 ]}
-                extra={<div className={styles.listItemExtra} />}
               >
-                <List.Item.Meta
-                  title={
-                    <a className={styles.listItemMetaTitle} href={item.href}>
-                      {item.title}
-                    </a>
-                  }
-                  description={
-                    <span>
-                      <Tag>Ant Design</Tag>
-                      <Tag>设计语言</Tag>
-                      <Tag>蚂蚁金服</Tag>
-                    </span>
-                  }
-                />
-                <ArticleListContent data={item} />
+                <Skeleton avatar title={false} loading={item.deleted} active>
+                  <List.Item.Meta
+                    avatar={<img className={styles.listItemExtra} src={item.questionPic} />}
+                    title={
+                      <p className={styles.listItemMetaTitle} >
+                        {item.questionDetail}
+                      </p>
+                    }
+                    description={
+                      <span>
+                        <Tag>{type[item.questionType]}</Tag>
+                        <Tag>{grade[item.questionGrade]}级</Tag>
+                      </span>
+                    }
+                  />
+                </Skeleton>
               </List.Item>
             )}
           />
         </Card>
+        <CreateForm {...parentMethods} 
+          modalVisible={showAdd} 
+          types={type} 
+          grades={grade}
+          loading={loading}
+          imageUrl={imageUrl}
+          />
       </>
     );
   }

@@ -36,14 +36,17 @@ const Model: ModelType = {
   effects: {
     *logout(_, { put }) {
       const { redirect } = getPageQuery();
+      localStorage.clear()
+      yield put({
+        type: 'changeLoginStatus',
+        status: 'error',
+        currentAuthority: 'guest'
+      })
       // redirect
       if (window.location.pathname !== '/user/login' && !redirect) {
         yield put(
           routerRedux.replace({
             pathname: '/user/login',
-            search: stringify({
-              redirect: window.location.href,
-            }),
           }),
         );
       }
