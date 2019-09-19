@@ -75,6 +75,7 @@ export default {
   block: {
     defaultGitUrl: 'https://github.com/ant-design/pro-blocks',
   },
+  history: 'hash',
   hash: true,
   targets: {
     ie: 11,
@@ -188,13 +189,13 @@ export default {
     basePath: '/',
   },
   chainWebpack: webpackPlugin,
-  proxy: {
-    '/vbm': {
-      target: 'http://sensuos.top:8085/',
-      changeOrigin: true,
-      pathRewrite: {
-        '^/vbm': '',
-      },
-    },
-  },
+  // proxy: {
+  //   '/vbm': {
+  //     target: 'http://sensuos.top:8085/',
+  //     changeOrigin: true,
+  //     // pathRewrite: {
+  //     //   '^/vbm': '',
+  //     // },
+  //   },
+  // },
 } as IConfig;

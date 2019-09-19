@@ -86,7 +86,6 @@ class Login extends Component<LoginProps, LoginState> {
       form: { ...form },
       updateActive: activeItem => {
         const { type = '', active = {} } = this.state;
-        // console.log('active item', activeItem)
         if (active[type]) {
           active[type].push(activeItem);
         } else {
@@ -118,12 +117,9 @@ class Login extends Component<LoginProps, LoginState> {
     const { type, tabs = [] } = this.state;
     const TabChildren: React.ReactComponentElement<LoginTab>[] = [];
     const otherChildren: React.ReactElement<any>[] = [];
-    // console.log('login props', this.props)
-    // console.log('login state', this.state)
     React.Children.forEach(
       children,
       (child: React.ReactComponentElement<LoginTab> | React.ReactElement<any>) => {
-        // console.log('child', child)
         if (!child) {
           return;
         }

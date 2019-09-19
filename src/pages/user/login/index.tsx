@@ -160,7 +160,9 @@ class Login extends Component<
               ]}
               onPressEnter={e => {
                 e.preventDefault();
-                this.loginForm.validateFields(this.handleSubmit);
+                if(this.loginForm) {
+                  this.loginForm.validateFields(this.handleSubmit);
+                }
               }}
             />
           </Tab>
@@ -192,7 +194,9 @@ class Login extends Component<
               ]}
               onPressEnter={e => {
                 e.preventDefault();
-                this.loginForm.validateFields(this.handleSubmit);
+                if (this.loginForm) {
+                  this.loginForm.validateFields(this.handleSubmit);
+                }
               }}
             />
           </Tab>

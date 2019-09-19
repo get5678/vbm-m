@@ -57,7 +57,6 @@ const Model: ModelType = {
     },
     *remove({ payload, callback }, { call, put }) {
       const response = yield call(interviewDelete, payload);
-      console.log('call', callback)
       if(response && response.code === 0) {
         callback()
       }else {

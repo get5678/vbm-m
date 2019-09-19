@@ -1,0 +1,2 @@
+const pulic_key = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCwxZwvV2JrICiSqokCqQnzy3hyczFbQ0rzVLwnmpk9/ydUpZU6PlDrLf83IVEA4htGytxFeHIYIxgZ5HRlEESacoJBHspRVajY/rIxenF8xJsOy7+NFZLGvMCTnYVchts+YUFTnm/BB16DDex7mJ3ZtiBJBYbdFQpC+6IkDAnueQIDAQAB"
+export default pulic_key

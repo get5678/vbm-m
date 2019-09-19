@@ -63,7 +63,6 @@ class WrapFormItem extends Component<LoginItemProps, LoginItemState> {
     const { updateActive, name = '' } = this.props;
     if (updateActive) {
       updateActive(name);
-      // console.log('name', updateActive, name)
     }
   }
 

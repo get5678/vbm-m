@@ -1,12 +1,15 @@
 import { AnyAction, Reducer } from 'redux';
 import { EffectsCommandMap } from 'dva';
+import Jsencrypt from 'jsencrypt';
 import { routerRedux } from 'dva/router';
 import { reloadAuthorized } from '@/utils/Authorized'
 import { fakeAccountLogin, getFakeCaptcha } from './service';
 import { adminLogin, userLogin } from '../../../services/api';
 import { getPageQuery, setAuthority } from './utils/utils';
 import { message } from 'antd';
+import publicKey from '@/utils/public_key';
 
+const jsencrypt = new Jsencrypt();
 export interface StateType {
   status?: 'ok' | 'error';
   type?: string;
@@ -46,6 +49,7 @@ const Model: ModelType = {
         type: 'changeLoginStatus',
         payload: response,
       });
+      
       // Login successfully
       if (response.status === 'ok') {
         const urlParams = new URL(window.location.href);
@@ -68,7 +72,11 @@ const Model: ModelType = {
     },
 
     *userLogin({ payload: { successCallback, ...payload } }, { call, put }) {
-      const response = yield call(userLogin, payload);
+      const { password: pas, phone } = payload
+      jsencrypt.setPublicKey(publicKey)
+      const password = jsencrypt.encrypt(pas);
+      const response = yield call(userLogin, { phone, password });
+      // const response = yield call(userLogin, payload);
       if(response && response.code === 0) {
         message.success('登录成功')
         localStorage.setItem('token', response.data.token)
@@ -87,7 +95,11 @@ const Model: ModelType = {
       reloadAuthorized()
     },
     *adminLogin({ payload: { successCallback, ...payload } }, { call, put }) {
-      const response = yield call(adminLogin, payload);
+      // message.loading('登陆中', 0)
+      const { password: pas, phone } = payload
+      jsencrypt.setPublicKey(publicKey)
+      const password = jsencrypt.encrypt(pas);
+      const response = yield call(adminLogin, {phone, password});
       if(response && Number(response.code) === 0) {
         message.success('登录成功')
         localStorage.setItem('token', response.data.token)
